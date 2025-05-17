@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Edge Detail{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <style>
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        input[type = "text"], input[type = "number"] {
+            padding: 8px;
+            width: 200px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="account">
+        <div class="title" style="margin-bottom: 15px">
+            Edge Detail
+        </div>
+
+        <div class="form-group">
+            <label>Source UID:</label>
+            <input type="text" value="{{ edge.source }}" readonly>
+            <input type="hidden" name="uid" value="{{ edge.source }}">
+        </div>
+
+        <div class="form-group">
+            <label>Target UID:</label>
+            <input type="text" value="{{ edge.target }}" readonly>
+            <input type="hidden" name="uid" value="{{ edge.target }}">
+        </div>
+
+        <div class="form-group">
+            <label>Weight:</label>
+            <input type="text" id="edge-weight" value="{{ edge.weight }}">
+        </div>
+
+        <div>
+            <div style="float: right;">
+                <a href="/clients/" style="text-decoration: none; color: inherit;" class="cancel-btn">
+                    <button class="btn btn-secondary">Back</button>
+                </a>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="saveEdge()" class="btn btn-primary">Save</button>
+            <button onclick="deleteEdge()" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        function saveEdge() {
+            const newWeight = document.getElementById('edge-weight').value;
+            window.location.href = `/clients/edge_detail/{{ edge.source }}/{{ edge.target }}/?action=edit&weight=${encodeURIComponent(newWeight)}`;
+        }
+
+        function deleteEdge() {
+            if (confirm('Are you sure you want to delete this edge?')) {
+                window.location.href = `/clients/edge_detail/{{ edge.source }}/{{ edge.target }}/?action=delete`;
+            }
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,3 @@
+asgiref @ file:///private/var/folders/c_/qfmhj66j0tn016nkx_th4hxm0000gp/T/abs_d2wfxoqk8w/croot/asgiref_1724072473040/work
+Django @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_8c5bdnaut3/croot/django_1731616018764/work
+sqlparse @ file:///private/var/folders/c_/qfmhj66j0tn016nkx_th4hxm0000gp/T/abs_delp7zl09t/croot/sqlparse_1734704454213/work

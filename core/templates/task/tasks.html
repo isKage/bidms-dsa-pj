@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks Management{% endblock %}
+
+{% block css %}
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="margin-bottom: 20px;">
+        <h2>Task Management</h2>
+
+        <!-- top k submit -->
+        <form method="get" action="{% url 'tasks' %}" style="display: inline;">
+            <input type="number" name="k" placeholder="Show top k tasks" min="1">
+            <button type="submit">Filter</button>
+
+            <!-- length of tasks -->
+            <span class="task-count">
+                <span class="badge" style="background-color: cornflowerblue; margin-left: 10px; font-size: small">
+                    Showing {{ show_num }} of {{ length }} tasks
+                </span>
+            </span>
+
+        </form>
+
+        <!-- add new -->
+        <a href="{% url 'add_task' %}" style="float: right; text-decoration: none; color: inherit;">
+            <button>Add New Task</button>
+        </a>
+    </div>
+
+    <table id="tasksTable">
+        <thead>
+        <tr>
+            <th>Task Name</th>
+            <th>Urgency</th>
+            <th>Impact</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+            <tr>
+                <td>{{ task.task_name }}</td>
+                <td>{{ task.urgency }}</td>
+                <td>{{ task.impact }}</td>
+                <td>
+                    <a href="{% url 'edit_task' task.uid %}" style="text-decoration: none; color: inherit;">
+                        <button class="btn btn-primary btn-xs">Edit</button>
+                    </a>
+                    <button onclick="deleteTask({{ task.uid }})" class="btn btn-danger btn-xs">Delete</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        // 删除任务
+        function deleteTask(uid) {
+            if (confirm('确定要删除这个任务吗？')) {
+                fetch(`/tasks/delete/?uid=${uid}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('删除任务失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            throw new Error(data.message || '删除任务失败');
+                        }
+                    })
+                    .catch(error => {
+                        alert(error.message);
+                        console.error('Error:', error);
+                    });
+            }
+        }
+    </script>
+{% endblock %}

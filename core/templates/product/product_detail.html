@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <style>
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            width: 200px;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    <div class="account">
+        <div class="title" style="margin-bottom: 15px">
+            {% if is_edit %}Edit{% else %}Add{% endif %}
+        </div>
+        <form method="POST" novalidate autocomplete="off">
+            {% csrf_token %}
+            {% if is_edit %}
+                <div class="form-group">
+                    <label>UID:</label>
+                    <input type="text" value="{{ uid }}" readonly>
+                    <input type="hidden" name="uid" value="{{ uid }}">
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label>Product Name:</label>
+                <input type="text" name="product_name" value="{{ product_name|default:'' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Price:</label>
+                <input type="number" name="price" min="0" value="{{ price|default:'' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Popularity:</label>
+                <input type="number" name="popularity" min="0" value="{{ popularity|default:'0' }}" required>
+            </div>
+
+
+            <div>
+                <div style="float: right;">
+                    <a href="{% url 'products' %}" style="text-decoration: none; color: inherit;" class="cancel-btn">
+                        <button class="btn">
+                            Cancel
+                        </button>
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xs-3">
+                    <button type="submit" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        // 取消按钮点击时不触发表单验证
+        document.querySelector('.cancel-btn').addEventListener('click', function (e) {
+            e.preventDefault();
+            window.location.href = "{% url 'products' %}";
+        });
+    </script>
+{% endblock %}

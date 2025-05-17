@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Product Management{% endblock %}
+
+{% block css %}
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div style="margin-bottom: 20px;">
+        <h2>Product Management</h2>
+
+        <!-- top k submit -->
+        <form method="get" action="{% url 'products' %}" style="display: inline;">
+            <input type="number" name="price1" placeholder="Price 1" min="0" step="0.01" value="{{ request.GET.price1 }}">
+            <input type="number" name="price2" placeholder="Price 2" min="0" step="0.01" value="{{ request.GET.price2 }}">
+            <input type="text" name="pattern" placeholder="Search name ..." value="{{ request.GET.pattern }}">
+            <button type="submit">Search</button>
+
+            <!-- length of tasks -->
+            <span class="task-count">
+                <span class="badge" style="background-color: cornflowerblue; margin-left: 10px; font-size: small">
+                    Showing {{ show_num }} of {{ length }} products
+                </span>
+            </span>
+
+        </form>
+
+
+        <!-- add new -->
+        <a href="{% url 'add_product' %}" style="float: right; text-decoration: none; color: inherit;">
+            <button>Add New Product</button>
+        </a>
+    </div>
+
+    <table id="tasksTable">
+        <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Popularity</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for product in products %}
+            <tr>
+                <td>{{ product.product_name }}</td>
+                <td>{{ product.price }}</td>
+                <td>{{ product.popularity }}</td>
+                <td>
+                    <a href="{% url 'edit_product' product.uid %}" style="text-decoration: none; color: inherit;">
+                        <button class="btn btn-primary btn-xs">Edit</button>
+                    </a>
+                    <button onclick="deleteTask({{ product.uid }})" class="btn btn-danger btn-xs">Delete</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        // 删除商品
+        function deleteTask(uid) {
+            if (confirm('确定要删除这个商品吗？')) {
+                fetch(`/products/delete/?uid=${uid}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('删除商品失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            throw new Error(data.message || '删除商品失败');
+                        }
+                    })
+                    .catch(error => {
+                        alert(error.message);
+                        console.error('Error:', error);
+                    });
+            }
+        }
+    </script>
+{% endblock %}

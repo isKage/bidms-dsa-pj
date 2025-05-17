@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Node Detail{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <style>
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 8px;
+            width: 200px;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <h1 class="panel-title">Node Detail</h1>
+                </div>
+
+                <div class="col-md-6">
+                    <div style="float: right;">
+                        <form method="get" action="{% url 'influence' node.uid 'loop' %}" style="float: right">
+                            <button type="submit" class="btn btn-info">Influence</button>
+                        </form>
+                        <form method="get" action="{% url 'influence' node.uid 'noloop' %}" style="float: right">
+                            <button type="submit" class="btn btn-info">Influence (No loop)</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="panel-body">
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <h3>Nodes Info</h3>
+
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <td></td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="form-group">
+                        <label>UID:</label>
+                        <input type="text" value="{{ node.uid }}" readonly>
+                        <input type="hidden" name="uid" value="{{ node.uid }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" id="node-name" value="{{ node.name }}">
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+                    <h3>Adjacent Nodes</h3>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Adjacent Nodes</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for adj_node in adjacent_nodes %}
+                            <tr>
+                                <td>{{ adj_node.name }} (uid: {{ adj_node.uid }})</td>
+                                <td>
+                                    <a href="/clients/edge_detail/{{ node.uid }}/{{ adj_node.uid }}/"
+                                       class="btn btn-sm btn-default">Edit</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="col-md-4">
+                    <h3>Add New Relations (optional)</h3>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Available Clients</th>
+                            <th>Distance (Weight)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for uid, name in available_clients %}
+                            <tr>
+                                <td>{{ name }} (uid: {{ uid }})</td>
+                                <td>
+                                    <input type="number" id="relation_{{ uid }}" class="form-control"
+                                           placeholder="Leave empty for no relation">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+
+
+    <div class="actions row">
+        <div class="col-md-6">
+            <div style="float: left;">
+                <button onclick="saveNode()" class="btn btn-primary">Save</button>
+                <button onclick="deleteNode()" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div style="float: right">
+                <a href="/clients/" class="btn btn-default">Back</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        function saveNode() {
+            const newName = document.getElementById('node-name').value;
+            let url = `/clients/node_detail/{{ node.uid }}/?action=edit&name=${encodeURIComponent(newName)}`;
+
+            // 添加新关系参数
+            {% for uid, name in available_clients %}
+                const weight_{{ uid }} = document.getElementById('relation_{{ uid }}').value;
+                if (weight_{{ uid }}) {
+                    url += `&new_relation_{{ uid }}=${encodeURIComponent(weight_{{ uid }})}`;
+                }
+            {% endfor %}
+
+            window.location.href = url;
+        }
+
+        function deleteNode() {
+            if (confirm('Are you sure you want to delete this node?')) {
+                window.location.href = `/clients/node_detail/{{ node.uid }}/?action=delete`;
+            }
+        }
+    </script>
+{% endblock %}

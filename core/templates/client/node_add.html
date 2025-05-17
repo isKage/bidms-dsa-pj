@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Client{% endblock %}
+
+{% block content %}
+    <h1>Add New Client</h1>
+
+    <form method="get" action="{% url 'node_add' %}">
+        <div class="form-group">
+            <label for="client-name">Client Name:</label>
+            <input type="text" id="client-name" name="name" class="form-control" required>
+        </div>
+
+        <h3>Add Relations (optional):</h3>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Existing Client</th>
+                <th>Distance (Weight)</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for uid, name in clients %}
+                <tr>
+                    <td>{{ name }} (UID: {{ uid }})</td>
+                    <td>
+                        <input type="number" name="relation_{{ uid }}" class="form-control"
+                               placeholder="Leave empty for no relation">
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" name="action" value="save" class="btn btn-primary">Save</button>
+        <a href="{% url 'clients' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

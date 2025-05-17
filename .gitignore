@@ -1,0 +1,29 @@
+# pycharm
+.idea/
+.DS_Store
+*/.DS_Store
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django stuff
+local_settings.py
+*.sqlite3
+
+# database migrations
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Scripts
+scripts/
+
+# data
+data/*.csv
+data/*.json
+data/*.db
+!data/readme.md
+
+# test data
+core/services/data_structures/test_data/*.db
+!core/services/data_structures/test_data/readme.txt
