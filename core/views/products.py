@@ -21,7 +21,7 @@ def products_view(request):
     pattern = request.GET.get('pattern', '')
     if pattern != '':
         uid_list = product_service.search_name(pattern)
-    print(uid_list)
+
     # 获取所有商品或 price1 to price2 的商品
     products = []
     if price1 and price2:
