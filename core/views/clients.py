@@ -152,6 +152,7 @@ def node_detail(request, uid):
     # 获取相邻节点
     adjacent_nodes = []
     u = client_service.get(int(uid))  # Vertex 类
+    len_ingoing = 0
     if u:
         # 从 u 出射的边 outgoing
         for neighbor in client_service.g.neighbors(u):
@@ -165,9 +166,11 @@ def node_detail(request, uid):
                 'uid': str(neighbor.element()),
                 'name': client_service.uid_to_name[neighbor.element()]
             })
+            len_ingoing += 1
 
     # 获取不相邻节点
     adjacent_uid = {int(adj['uid']) for adj in adjacent_nodes}
+    adjacent_nodes = adjacent_nodes[:-len_ingoing]
     available_clients = []
     for i in client_service.locators:
         if i != int(uid) and i not in adjacent_uid:

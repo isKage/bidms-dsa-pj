@@ -38,6 +38,9 @@ class Product:
             for me, you in zip(my_key, other_key):
                 if me != you:
                     return False
+                # 或者
+                # if abs(me - you) < 1e-12:
+                #     return False
             return True
 
         def __lt__(self, other):
@@ -116,8 +119,13 @@ class ProductService:
         self.product_data_file = os.path.join(settings.DATA_DIR, '04products.csv')
         self._max_uid = 0
         self._n = 0
+        self._load_data()  # 读取数据
 
-        # 读取数据
+    def __len__(self):
+        return self._n
+
+    # -------------------- nonpublic method --------------------
+    def _load_data(self):
         with open(self.product_data_file, "r") as f:
             content = f.readlines()
             if len(content) != 0 and content[0] != '\n':
@@ -130,10 +138,6 @@ class ProductService:
                         # 添加 Product 对象
                         self._add(uid=line[0], name=line[1], sort_key=[line[2], line[3]])
 
-    def __len__(self):
-        return self._n
-
-    # -------------------- nonpublic method --------------------
     def _add(self, uid, name, sort_key: list):
         """插入, 当 uid 知时"""
         product = Product(uid, name, sort_key, bucket=None)

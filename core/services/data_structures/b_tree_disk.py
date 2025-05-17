@@ -2,7 +2,7 @@ import struct
 import os
 
 T = 3
-ORDER = 3
+ORDER = T
 KEY_SIZE = 8  # 每个键占 8 字节
 OFFSET_SIZE = 8  # 每个值占 8 字节
 MAX_KEYS = (2 * T - 1)
@@ -32,7 +32,11 @@ def create_node(is_leaf=True, keys=None, children=None, offset=None):
 
 
 class DiskBTree:
+    """B 树"""
+
     class DiskBTreeNode:
+        """B 树的节点"""
+
         def __init__(self, is_leaf=True, keys=None, children=None, offset=None, n=0):
             self.is_leaf = is_leaf
             self.keys = [0] * MAX_KEYS if keys is None else keys  # key e.g. uid
@@ -209,6 +213,8 @@ class DiskBTree:
 
 if __name__ == '__main__':
     # k > 0
+    print("One node size", NODE_SIZE)
+
     print("=" * 100, "\nInitial and Add Data\n", "-" * 100, sep="")
     tree = DiskBTree()
     keys_to_insert = [2, 3, 4, 5, 6, 12, 7, 8, 9, 10, 11, 15, 13]
