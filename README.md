@@ -196,7 +196,7 @@ top-k ：
 
 - 方法二，先将 $k$ 个元素建堆 ，复杂度为 $O(k)$ 。然后将剩下的 $n-k$ 个元素逐个和堆顶元素比较，如果更大，则替换掉栈顶元素，同时进行向下冒泡 downheap 使得满足 heap-order 性质，这一步的复杂度为 $O((n-k)\cdot \log k)$ 。最后再逐个出堆，总共的时间复杂度为 $O(k + (n-k)\cdot \log k + k\log k) \sim O(n\cdot \log k)$ 。若不采用自底向上建堆，则为 $O(k\log k + (n-k)\log k + k \log k) \sim O(n\log k)$ 。
 
-所以实现时，可以选取一个临界点，实现复杂度为 $\min\left\{ O(k\log n),\ O(n\log k) \right\}$ 。
+所以实现时，可以选取一个临界点，实现复杂度为 $\min \{ O(k\log n),\ O(n\log k) \}$ 。
 
 ### 2.4 功能展示
 
@@ -504,26 +504,32 @@ def floyd_warshall_shortest_path(g: Graph) -> dict:
 统计分析：
 
 设 $X_{ij}$ 代表客户 $i$ 对客户 $j$ 的最大影响力大小。假设 $X_{ij} \sim N(\mu_i,\ \sigma_i^2)$ ，且 $X_{ij}$ 相互独立对于 $\forall\ j = 1,\ 2,\ \cdots,\ n$ 。则有：
-$$
-\hat{\mu}_{i,\ unb} = \frac{1}{n}\sum_{j=1}^n X_{ij} = \bar{X_i}
-$$
 
-$$
+```math
+\hat{\mu}_{i,\ unb} = \frac{1}{n}\sum_{j=1}^n X_{ij} = \bar{X_i}
+```
+
+```math
 \hat{\sigma^2}_{i,\ unb} = \frac{1}{n-1}\sum_{j=1}^n (X_{ij} - \bar{X_i})^2 = S^2
-$$
+```
 
 而：
-$$
+
+```math
 \frac{X_{ij} - \mu_i}{\sigma_i} \sim N(0,\ 1)
-$$
+```
+
 从而有：
-$$
+
+```math
 P\left(z_{\alpha/2}<\frac{X_{ij} - \mu_i}{\sigma_i}<z_{1-\alpha/2}\right) = 1-\alpha
-$$
+```
+
 我们定义 $X_{ij} \leq \mu_i + z_{\alpha/2}\cdot \sigma_i$ 为异常小的，可以忽略不计。于是根据已有的数据 $X_{ij}\quad \forall j = 1,\ 2,\ \cdots,\ n$ 可以得到被忽略的数据 $X^{ign}_{ij}$（基于对 $\mu_i$ 和 $\sigma$ 的估计）：
-$$
+
+```math
 X^{ign}_{ij} \leq \left(\frac{1}{n}\sum_{j=1}^n X_{ij}\right) + z_{\alpha/2}\cdot  \left( \frac{1}{n-1}\sum_{j=1}^n (X_{ij} - \bar{X_i})^2\right)
-$$
+```
 
 代码实现可见 [client_service.py](core/services/client_service.py) 的 `ClientService.all_influence()` 方法。
 
@@ -646,9 +652,11 @@ price 范围：找到 `start` 位置，然后中序遍历，逐个返回即可�
 设商品数为 $n$ ，则 AVL 树高度大约为 $h = O(\log n)$ 。搜索的复杂度为 $O(\log n)$ 。插入和删除也为 $O(\log n)$ 。更新操作最坏也是插入和删除的组合，仍然为对数时间。查找范围为 $O(s + \log n)$ 其中 $s$ 为查找范围中含有的商品数。
 
 模式匹配：设商品名大约均为 $m$ 长，匹配的字符串长为 $p \leq m$ ，总共 $n$ 个商品。如果采用方法一，长为 m 的匹配复杂度为 $O(m + p)$，循环 n 次，最终复杂度为 $O(n(m + p))$ ，方法二先遍历拼接字符串，复杂度为 $O(n)$ ，然后对整体匹配，复杂度为 $O(nm + p)$ ，最终复杂度为 $O(n +nm + p)$ 。二者的差：
-$$
+
+```math
 n(m+p) - (n +nm + p) = np-n-p = (n-1)(p-1) - 1 \geq 0
-$$
+```
+
 当 $n,\ p > 1$ 时，故方法二更优。
 
 ### 6.4 功能展示
@@ -897,9 +905,11 @@ Root offset is 679
 ### 7.4 算法分析
 
 对于数据量为 n （n 个键）的 B 树，每个节点至多 t 个字节的，其高度 h 满足：
-$$
+
+```math
 h \leq \log_t \frac{n+1}{2}
-$$
+```
+
 证明见教材 《算法导论》，一下结论证明均见教材：
 
 - 搜索：磁盘访问 $O(h) = O(\log_t n)$ ，因为最坏情况需要遍历每一层，故从磁盘读 h 次（同理内存也要读 h 次）；最坏情况，CPU 内存需要访问每个节点的每个键（最多 t - 1 个），故复杂度为 $O(th) = O(t\log_t n)$ 。
