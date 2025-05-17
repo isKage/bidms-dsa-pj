@@ -522,7 +522,7 @@ def floyd_warshall_shortest_path(g: Graph) -> dict:
 从而有：
 
 ```math
-P\left(z_{\alpha/2}<\frac{X_{ij} - \mu_i}{\sigma_i}<z_{1-\alpha/2}\right) = 1-\alpha
+P\left( z_{\alpha/2} < \frac{X_{ij} - \mu_i}{\sigma_i} < z_{1-\alpha/2} \right) = 1 - \alpha
 ```
 
 我们定义 $X_{ij} \leq \mu_i + z_{\alpha/2}\cdot \sigma_i$ 为异常小的，可以忽略不计。于是根据已有的数据 $X_{ij}\quad \forall j = 1,\ 2,\ \cdots,\ n$ 可以得到被忽略的数据 $X^{ign}_{ij}$（基于对 $\mu_i$ 和 $\sigma$ 的估计）：
