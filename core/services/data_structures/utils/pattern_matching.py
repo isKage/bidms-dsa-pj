@@ -75,7 +75,7 @@ def find_all_kmp(pattern, text):
     return match
 
 
-def find_all_from_list(pattern: str, texts, sep="*"):
+def find_all_from_list_fail(pattern: str, texts, sep="*"):
     """
     对于字符串列表 text_list 返回所有包含 pattern 的索引
     :param pattern: 匹配模式
@@ -127,6 +127,40 @@ def find_all_from_list(pattern: str, texts, sep="*"):
     return match
 
 
+def find_all_from_list(pattern: str, text_list: list, sep="*"):
+    """
+    对于字符串列表 text_list 返回所有包含 pattern 的索引
+    :param pattern: 匹配模式
+    :param text_list: 字符串列表 ["text1", "text2", ...]
+    :param sep: 特殊分割符, 默认为 "*" , 要求一定不在 text_list 所含有的字符里
+    :return: text_list 包含 pattern 的索引 [idx1, idx2, ...]
+    """
+    m = len(pattern)
+    if m == 0:
+        return [i for i in range(len(text_list))]
+    texts = ""
+    start = 0
+    range_idx_list = [(0, 0)] * len(text_list)
+    res = set()
+    for i, text in enumerate(text_list):
+        tmp_len = len(text)
+        range_idx_list[i] = (start, start + tmp_len - 1)
+        start += tmp_len + 1
+        texts = texts + (text + sep)
+    match = find_all_kmp(pattern, texts)
+
+    i = 0
+    idx = 0
+    while idx < len(match):
+        if range_idx_list[i][0] <= match[idx] <= range_idx_list[i][1]:
+            res.add(i)
+            idx += 1
+            continue
+        else:
+            i += 1
+    return list(res)
+
+
 if __name__ == '__main__':
     text = "This is a sentence, the target is to find the pattern which is matching"
     pattern = "th"
@@ -135,6 +169,7 @@ if __name__ == '__main__':
     print(text[match_index:])
 
     all_match = find_all_kmp(pattern, text.lower())
+    print(all_match)
     for match in all_match:
         print(text[match:])
 
@@ -142,15 +177,6 @@ if __name__ == '__main__':
     pattern = "abc"
     text_list = ["abc421", "a12abc", "39akbc", "3ma3b1abc", "a31bc", "1ac1abc"]
     all_match_index = find_all_from_list(pattern, text_list)
-    print(all_match_index)
-    for match_index in all_match_index:
-        print(text_list[match_index])
-
-    print("=" * 100)
-    pattern = "abc"
-    text_list = ["abc421", "a12abc", "39akbc", "3ma3b1abc", "a31bc", "1ac1abc"]
-    texts = "*".join(text_list) + "*"
-    all_match_index = find_all_from_list(pattern, texts)
     print(all_match_index)
     for match_index in all_match_index:
         print(text_list[match_index])

@@ -21,7 +21,7 @@ def products_view(request):
     pattern = request.GET.get('pattern', '')
     if pattern != '':
         uid_list = product_service.search_name(pattern)
-
+    print(uid_list)
     # 获取所有商品或 price1 to price2 的商品
     products = []
     if price1 and price2:
@@ -36,18 +36,24 @@ def products_view(request):
     table_data = []
     for product in products:
         uid, product_name = product.uid, product.name
-
+        if pattern == "":
+            price, popularity = product.key_element()
+            table_data.append({
+                'uid': uid,
+                'product_name': product_name,
+                'price': -round(price / 100, 2),
+                'popularity': -popularity,
+            })
         # 加入 name 匹配限制
         if uid_list:
-            if uid not in uid_list:
-                continue
-        price, popularity = product.key_element()
-        table_data.append({
-            'uid': uid,
-            'product_name': product_name,
-            'price': -round(price / 100, 2),
-            'popularity': -popularity,
-        })
+            if uid in uid_list:
+                price, popularity = product.key_element()
+                table_data.append({
+                    'uid': uid,
+                    'product_name': product_name,
+                    'price': -round(price / 100, 2),
+                    'popularity': -popularity,
+                })
     context['products'] = table_data  # 展示内容
     context['length'] = len(product_service)  # 总长度
     context['show_num'] = len(table_data)  # 最终展示

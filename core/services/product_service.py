@@ -235,8 +235,11 @@ class ProductService:
             uid_list[i] = uid
             name_list[i] = product.name
             i += 1
-        match_index = find_all_from_list(pattern=pattern, texts=name_list, sep="*")  # 开始匹配
-        return [uid_list[idx] for idx in match_index]  # 返回 uid 列表
+        match_index = find_all_from_list(pattern=pattern, text_list=name_list, sep="*")  # 开始匹配
+        if match_index:
+            return [uid_list[idx] for idx in match_index]  # 返回 uid 列表
+        else:
+            return []
 
     # -------------------- 查范围 --------------------
     def find_range(self, start, end):
