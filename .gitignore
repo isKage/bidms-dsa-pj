@@ -27,3 +27,6 @@ data/*.db
 # test data
 core/services/data_structures/test_data/*.db
 !core/services/data_structures/test_data/readme.txt
+
+# ppt
+ppt/
