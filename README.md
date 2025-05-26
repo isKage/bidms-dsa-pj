@@ -408,7 +408,7 @@ def BFS_allow_loop(g: Graph, s: Graph.Vertex, discovered: list):
 
 之前的功能已经实现了第一个定义——所能到达的所有路径的权重和。采用 BFS 计算，其中 `BFS_allow_loop()` 函数甚至计算了能影响的客户对同一客户的影响。即 A 对 B 和 C 有影响，B 对 C 有影响，`BFS_allow_loop` 计算了 (AB + AC) + BC 。
 
-下面我们实现第二章定义——所有最大路路长的平均。
+下面我们实现第二种定义——所有最大路路长的平均。
 
 > 注意：最长/短是等价的，只需添加正负号即可。
 
@@ -553,7 +553,7 @@ X^{ign}_{ij} \leq \left(\frac{1}{n}\sum_{j=1}^n X_{ij}\right) + z_{\alpha/2}\cdo
 
 > 在 Product Plus 拓展部分，我们使用新的数据结构来实现内存不足的情况。
 
-简单来说，我们需要维护一个商品的 `name, price, popularity` 字段，同样我们维护一个 `uid` 作为唯一标识符，实现增删改查，并返回任意 price 区间的数据，按照 popularity 排序。同时实现字符串前缀匹配问题（这里的前缀问题改为是否包含搜索的字符串，本质都是模式匹配问题）。
+简单来说，我们需要维护一个商品的 `name, price, popularity` 字段，同样我们维护一个 `uid` 作为唯一标识符，实现增删改查，并返回任意 price 区间的数据，按照 popularity 排序。同时实现字符串匹配问题。
 
 ### 6.1 数据存储方式
 
@@ -725,7 +725,7 @@ Search one time: 0.00011587142944335938
 
 >  [b_tree.py](core/services/data_structures/b_tree.py) 代码实现了基于内存的经典 B 树，不涉及磁盘管理，代码来自 [Geeksforgeeks](https://www.geeksforgeeks.org/introduction-of-b-tree-2/) 。
 
-本项目实现了基于磁盘存储的 B 树，代码见  [b_tree_disk.py](core/services/data_structures/b_tree_disk.py) ，实现了插入和搜索功能，其他功能同理。
+本项目实现了基于磁盘存储的 B 树，代码见  [b_tree_disk.py](core/services/data_structures/b_tree_disk.py) ，实现了插入、删除和查找功能。
 
 #### 7.2.1 数据存储和读取方式
 
@@ -831,7 +831,7 @@ class DiskBTree:
 - 根据偏移量，将下一节点从磁盘中读入内存，重复第二步
 - 直到叶子节点都没找到，则代表搜索失败，返回 None
 
-插入和删除操作都涉及对树结构进行变更，这里不多赘述。插入操作可见代码 [b_tree_disk.py](core/services/data_structures/b_tree_disk.py) （已实现基于磁盘的插入），删除操作可见 [b_tree.py](core/services/data_structures/b_tree.py) （基于内存）。
+插入和删除操作都涉及对树结构进行变更，这里不多赘述。插入操作/删除可见代码 [b_tree_disk.py](core/services/data_structures/b_tree_disk.py) 。
 
 B 树的优点在于：并不是一次性把所有数据读入内存，而是将在 B 树中搜索路径上的节点数据读入内存，这就解决了大数据难以全部读入的困境。
 
@@ -845,8 +845,9 @@ B 树的优点在于：并不是一次性把所有数据读入内存，而是将
 
 ```python
 if __name__ == '__main__':
-    # k > 0  # 因为将 0 作为了占位符
+    # k > 0
     print("One node size", NODE_SIZE)
+
     print("=" * 100, "\nInitial and Add Data\n", "-" * 100, sep="")
     tree = DiskBTree()
     keys_to_insert = [2, 3, 4, 5, 6, 12, 7, 8, 9, 10, 11, 15, 13]
@@ -866,9 +867,28 @@ if __name__ == '__main__':
     print("The root: ", tree.root)
     print("Search 100: ", tree.search(100))
     print("Search 1: ", tree.search(1))
-    print("Search 11: ", tree.search(11))
+    print("Search 90: ", tree.search(90))
+    print("Search 30: ", tree.search(30))
     root_offset = tree.close()
     print(f"Root offset is {root_offset}")
+
+    # 删除测试
+    print("=" * 100, "\nSearch 4 and show the tree\n", "-" * 100, sep="")
+    tree = DiskBTree(679)
+
+    print(tree.search(4))  # 查找 4
+
+    print("-" * 100)
+    traverse(FILENAME)  # 原始树
+
+    print("=" * 100, "\nDelete 4 and show the tree\n", "-" * 100, sep="")
+    tree.remove(4)  # 移除 4
+    print(tree.search(4))  # 查找 4
+    print(tree.search(7))  # 查找 7
+    print("-" * 100)
+    traverse(FILENAME)  # 树结构
+
+    print(f"Root offset is {tree.close()}")
 ```
 
 注意到，第一个节点 offset 肯定是 0 ，插入一些数据后（`T = 3`）根节点 offset = 97 Byte 恰好等于 `1 + 8 * 5 + 8 * 6 + 8 = 97` 的 1 倍，679 为 97 的 7 倍。
@@ -898,6 +918,39 @@ Search 1:  BTreeNode(is_leaf=True, keys=[1, 2, 3], num_keys=3, children=[None, N
 Search 11:  BTreeNode(is_leaf=False, keys=[11], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
 
 Root offset is 679
+
+=======================================================================
+Search 4 and show the tree
+-----------------------------------------------------------------------
+BTreeNode(is_leaf=False, keys=[4, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+-----------------------------------------------------------------------
+BTreeNode(is_leaf=True, keys=[1, 2, 3], num_keys=3, children=[None, None, None, None, None, None], offset=0)
+BTreeNode(is_leaf=False, keys=[4, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+BTreeNode(is_leaf=True, keys=[5, 6], num_keys=2, children=[None, None, None, None, None, None], offset=194)
+BTreeNode(is_leaf=True, keys=[8, 9], num_keys=2, children=[None, None, None, None, None, None], offset=291)
+BTreeNode(is_leaf=True, keys=[11, 12], num_keys=2, children=[None, None, None, None, None, None], offset=388)
+BTreeNode(is_leaf=True, keys=[15, 20, 21], num_keys=3, children=[None, None, None, None, None, None], offset=485)
+BTreeNode(is_leaf=True, keys=[40, 50], num_keys=2, children=[None, None, None, None, None, None], offset=582)
+BTreeNode(is_leaf=False, keys=[10], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+BTreeNode(is_leaf=False, keys=[13, 30, 60], num_keys=3, children=[388, 485, 582, 873, None, None], offset=776)
+BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
+=======================================================================
+Delete 4 and show the tree
+-----------------------------------------------------------------------
+None
+BTreeNode(is_leaf=False, keys=[3, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+-----------------------------------------------------------------------
+BTreeNode(is_leaf=True, keys=[1, 2], num_keys=2, children=[None, None, None, None, None, None], offset=0)
+BTreeNode(is_leaf=False, keys=[3, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+BTreeNode(is_leaf=True, keys=[5, 6], num_keys=2, children=[None, None, None, None, None, None], offset=194)
+BTreeNode(is_leaf=True, keys=[8, 9], num_keys=2, children=[None, None, None, None, None, None], offset=291)
+BTreeNode(is_leaf=True, keys=[11, 12], num_keys=2, children=[None, None, None, None, None, None], offset=388)
+BTreeNode(is_leaf=True, keys=[15, 20, 21], num_keys=3, children=[None, None, None, None, None, None], offset=485)
+BTreeNode(is_leaf=True, keys=[40, 50], num_keys=2, children=[None, None, None, None, None, None], offset=582)
+BTreeNode(is_leaf=False, keys=[13], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+BTreeNode(is_leaf=False, keys=[30, 60], num_keys=2, children=[485, 582, 873, 873, None, None], offset=776)
+BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
+Root offset is 679
 ```
 
 > 本代码的实现仍然较为粗糙，例如有多处磁盘读取是不必要的。
@@ -924,4 +977,30 @@ h \leq \log_t \frac{n+1}{2}
 >
 >以上的分析均是基于磁盘每次读取只读一个节点，实际上一次读取的数据块可能包含更多键（数据），那么磁盘复杂度能更优。
 
- 
+## 8 总结
+
+本项目从零实现了基础数据结构，例如优先级队列、树、图、哈希表，以及一些基础算法，例如排序算法、图的各类算法、模式匹配等，并在此基础上拓展了 B 树和 B+ 树的知识，同时实现了基于磁盘管理的 B 树。
+
+### 8.1 本项目的优点
+
+- 设计数据存储方式：每一个对象，使用自增唯一的主键 `uid` 进行唯一标识，为未来复杂数据的开发提供了便利。
+- 提出了基于比较的自定义“键”对象：在基于比较的排序算法中，针对“键”的全序要求，本项目提出了自定义“键“类，从而可以自定义”比较“的方式，为未来处理复杂比较问题提供了便利。
+- 处理了”键“相同的冲突：许多场景允许键相同（例如价格作为键排序时），本项目提出了建立桶 Bucket 结构来存储多个相同键的数据。
+- 实现了基于磁盘管理的 B 树：B+ 树借用了高级包 `shelve` ，此包以类字典的方式管理文件读写；除此之外，本项目还完成了从零实现的基于磁盘管理的 B 树，数据以二进制文件的方式存储，完成了基本的增删改查和对应的永久性处理。
+- 项目已实现可视化 UI 界面：本项目基于 `Django` 实现了前端编写，完成了项目雏形设计。
+
+### 8.2 缺点与改进
+
+缺点：
+
+- 为与前端兼容，实现了一些与算法和结构本身无关的方法，封装程度不足。
+- 问题二用户影响部分，对影响的定义比较简单。
+- B 树磁盘管理部分使用了一些不必要的文件读写，效率有所影响。
+- B+ 树磁盘管理部分使用高级库 `shelve` 实现，部分细节不明晰。
+
+改进：
+
+- 有关网络重要性可以采用 PageRank 算法，前缀查找可以采用字典树结构。
+- 读取磁盘按照“块”单位读取，可以一次性读入多个节点，在未来巨量数据处理时，可以加以改进。
+- KPM 算法是否可以与 Huffman 编码联合使用，提高内存利用率（待思考）。
+- 使用 uid 映射到具体数据时，也可以采用 B 树磁盘管理的思想，由 uid 映射到该数据对应的偏移量，从而可以应对一条十分巨大的数据记录。

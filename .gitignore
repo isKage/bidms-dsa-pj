@@ -29,4 +29,35 @@ core/services/data_structures/test_data/*.db
 !core/services/data_structures/test_data/readme.txt
 
 # ppt
-ppt/
+# LaTeX intermediate files
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.lof
+*.lot
+
+# Output PDF (optional, remove if you want to track the final PDF)
+ppt/*.pdf
+
+# Editor-specific files
+*.swp
+*.bak
+*~
+.vscode/
+.idea/
+
+# JetBrains and Python virtual environments (if present)
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/

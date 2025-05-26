@@ -9,7 +9,7 @@ MAX_KEYS = (2 * T - 1)
 CHILDREN_SIZE = MAX_KEYS + 1
 NODE_SIZE = 1 + MAX_KEYS * KEY_SIZE + CHILDREN_SIZE * OFFSET_SIZE + 8
 
-FILENAME = "test_data/btree.db"
+FILENAME = "btree.db"
 
 
 def from_bytes(data, offset):
@@ -125,6 +125,184 @@ class DiskBTree:
                 DiskBTree.write_node(node)
                 DiskBTree.write_node(self)
 
+        def find_key(self, k):
+            """在节点中找到键 k 的位置"""
+            idx = 0
+            while idx < self.n and self.keys[idx] < k:
+                idx += 1
+            return idx
+
+        def remove(self, k):
+            """从节点中删除键 k"""
+            idx = self.find_key(k)
+
+            if idx < self.n and self.keys[idx] == k:
+                if self.is_leaf:
+                    self.remove_from_leaf(idx)
+                else:
+                    self.remove_from_non_leaf(idx)
+            else:
+                if self.is_leaf:
+                    print(f"The key {k} does not exist in the tree")
+                    return
+
+                flag = (idx == self.n)
+                node = DiskBTree.read_node(self.children[idx])
+                if node.n < T:
+                    self.fill(idx)
+                DiskBTree.write_node(node)
+
+                if flag and idx > self.n:
+                    node = DiskBTree.read_node(self.children[idx - 1])
+                    node.remove(k)
+                    DiskBTree.write_node(node)
+                else:
+                    node = DiskBTree.read_node(self.children[idx])
+                    node.remove(k)
+                    DiskBTree.write_node(node)
+
+            DiskBTree.write_node(self)
+
+        def remove_from_leaf(self, idx):
+            """从叶子节点中删除 idx 位置的键"""
+            for i in range(idx + 1, self.n):
+                self.keys[i - 1] = self.keys[i]
+            self.n -= 1
+
+            DiskBTree.write_node(self)
+
+        def remove_from_non_leaf(self, idx):
+            """从内部节点删除 idx 位置的键"""
+            k = self.keys[idx]
+
+            node = DiskBTree.read_node(self.children[idx])
+            node_next = DiskBTree.read_node(self.children[idx + 1])
+            if node.n >= T:
+                pred = self.get_pred(idx)
+                self.keys[idx] = pred
+                node.remove(pred)
+
+                DiskBTree.write_node(node)
+
+            elif node_next.n >= T:
+                succ = self.get_succ(idx)
+                self.keys[idx] = succ
+                node_next.remove(succ)
+
+                DiskBTree.write_node(node)
+
+            else:
+                self.merge(idx)
+                node.remove(k)
+                DiskBTree.write_node(node)
+
+            DiskBTree.write_node(self)
+
+        def get_pred(self, idx):
+            cur = DiskBTree.read_node(self.children[idx])
+            while not cur.is_leaf:
+                cur = DiskBTree.read_node(self.children[cur.n])
+
+            return cur.keys[cur.n - 1]
+
+        def get_succ(self, idx):
+            cur = DiskBTree.read_node(self.children[idx + 1])
+            while not cur.is_leaf:
+                cur = DiskBTree.read_node(self.children[0])
+
+            return cur.keys[0]
+
+        def fill(self, idx):
+            if idx != 0:
+                node = DiskBTree.read_node(self.children[idx - 1])
+                if node.n >= T:
+                    self.borrow_from_prev(idx)
+            elif idx != self.n:
+                node = DiskBTree.read_node(self.children[idx + 1])
+                if node.n >= T:
+                    self.borrow_from_next(idx)
+            else:
+                if idx != self.n:
+                    self.merge(idx)
+                else:
+                    self.merge(idx - 1)
+
+        def borrow_from_prev(self, idx):
+            child = DiskBTree.read_node(self.children[idx])
+            sibling = DiskBTree.read_node(self.children[idx - 1])
+
+            for i in range(child.n - 1, -1, -1):
+                child.keys[i + 1] = child.keys[i]
+
+            if not child.is_leaf:
+                for i in range(child.n, -1, -1):
+                    child.children[i + 1] = child.children[i]
+
+            child.keys[0] = self.keys[idx - 1]
+
+            if not child.is_leaf:
+                child.children[0] = sibling.children[sibling.n]
+
+            self.keys[idx - 1] = sibling.keys[sibling.n - 1]
+
+            child.n += 1
+            sibling.n -= 1
+
+            DiskBTree.write_node(child)
+            DiskBTree.write_node(sibling)
+            DiskBTree.write_node(self)
+
+        def borrow_from_next(self, idx):
+            child = DiskBTree.read_node(self.children[idx])
+            sibling = DiskBTree.read_node(self.children[idx + 1])
+
+            child.keys[child.n] = self.keys[idx]
+
+            if not child.is_leaf:
+                child.children[child.n + 1] = sibling.children[0]
+
+            self.keys[idx] = sibling.keys[0]
+
+            for i in range(1, sibling.n):
+                sibling.keys[i - 1] = sibling.keys[i]
+
+            if not sibling.is_leaf:
+                for i in range(1, sibling.n + 1):
+                    sibling.children[i - 1] = sibling.children[i]
+
+            child.n += 1
+            sibling.n -= 1
+
+            DiskBTree.write_node(child)
+            DiskBTree.write_node(sibling)
+            DiskBTree.write_node(self)
+
+        def merge(self, idx):
+            child = DiskBTree.read_node(self.children[idx])
+            sibling = DiskBTree.read_node(self.children[idx + 1])
+
+            child.keys[T - 1] = self.keys[idx]
+
+            for i in range(sibling.n):
+                child.keys[i + T] = sibling.keys[i]
+
+            if not child.is_leaf:
+                for i in range(sibling.n + 1):
+                    child.children[i + T] = sibling.children[i]
+
+            for i in range(idx + 1, self.n):
+                self.keys[i - 1] = self.keys[i]
+
+            for i in range(idx + 2, self.n + 1):
+                self.children[i - 1] = self.children[i]
+
+            child.n += sibling.n + 1
+            self.n -= 1
+
+            DiskBTree.write_node(child)
+            DiskBTree.write_node(sibling)
+            DiskBTree.write_node(self)
+
     # ----------------------- B 树定义 -----------------------
     def __init__(self, root_offset=None):
         """初始化 B 树"""
@@ -133,6 +311,7 @@ class DiskBTree:
             self.root = None
         else:
             self.root = DiskBTree.read_node(root_offset)  # 从磁盘读入根节点
+        self.aval = []
 
     def insert(self, k):
         if self.root is None:
@@ -188,6 +367,23 @@ class DiskBTree:
             return _search(next_node)
 
         return _search(self.root)
+
+    def remove(self, k):
+        """B 树删除键 k"""
+        if not self.root:
+            print("The tree is empty")
+            return
+
+        self.root.remove(k)
+
+        if self.root.n == 0:
+            tmp = self.root
+            if self.root.is_leaf:
+                self.root = None
+            else:
+                self.root = DiskBTree.read_node(self.root.children[0])
+
+            self.aval.append(tmp.offset)
 
     @classmethod
     def read_node(cls, offset):
@@ -277,8 +473,56 @@ if __name__ == '__main__':
     Search 30:  BTreeNode(is_leaf=False, keys=[13, 30, 60], num_keys=3, children=[388, 485, 582, 873, None, None], offset=776)
     Root offset is 679
     """
-    # tree = DiskBTree(679)
-    # print(tree.search(90))
-    # print("=" * 100)
-    #
-    # traverse(FILENAME)
+
+    # 删除测试
+    print("=" * 100, "\nSearch 4 and show the tree\n", "-" * 100, sep="")
+    tree = DiskBTree(679)
+
+    print(tree.search(4))  # 查找 4
+
+    print("-" * 100)
+    traverse(FILENAME)  # 原始树
+
+    print("=" * 100, "\nDelete 4 and show the tree\n", "-" * 100, sep="")
+    tree.remove(4)  # 移除 4
+    print(tree.search(4))  # 查找 4
+    print(tree.search(7))  # 查找 7
+    print("-" * 100)
+    traverse(FILENAME)  # 树结构
+
+    print(f"Root offset is {tree.close()}")
+
+    """
+    ====================================================================================================
+    Search 4 and show the tree
+    ----------------------------------------------------------------------------------------------------
+    BTreeNode(is_leaf=False, keys=[4, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+    ----------------------------------------------------------------------------------------------------
+    BTreeNode(is_leaf=True, keys=[1, 2, 3], num_keys=3, children=[None, None, None, None, None, None], offset=0)
+    BTreeNode(is_leaf=False, keys=[4, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+    BTreeNode(is_leaf=True, keys=[5, 6], num_keys=2, children=[None, None, None, None, None, None], offset=194)
+    BTreeNode(is_leaf=True, keys=[8, 9], num_keys=2, children=[None, None, None, None, None, None], offset=291)
+    BTreeNode(is_leaf=True, keys=[11, 12], num_keys=2, children=[None, None, None, None, None, None], offset=388)
+    BTreeNode(is_leaf=True, keys=[15, 20, 21], num_keys=3, children=[None, None, None, None, None, None], offset=485)
+    BTreeNode(is_leaf=True, keys=[40, 50], num_keys=2, children=[None, None, None, None, None, None], offset=582)
+    BTreeNode(is_leaf=False, keys=[10], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+    BTreeNode(is_leaf=False, keys=[13, 30, 60], num_keys=3, children=[388, 485, 582, 873, None, None], offset=776)
+    BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
+    ====================================================================================================
+    Delete 4 and show the tree
+    ----------------------------------------------------------------------------------------------------
+    None
+    BTreeNode(is_leaf=False, keys=[3, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+    ----------------------------------------------------------------------------------------------------
+    BTreeNode(is_leaf=True, keys=[1, 2], num_keys=2, children=[None, None, None, None, None, None], offset=0)
+    BTreeNode(is_leaf=False, keys=[3, 7], num_keys=2, children=[0, 194, 291, 388, 485, 582], offset=97)
+    BTreeNode(is_leaf=True, keys=[5, 6], num_keys=2, children=[None, None, None, None, None, None], offset=194)
+    BTreeNode(is_leaf=True, keys=[8, 9], num_keys=2, children=[None, None, None, None, None, None], offset=291)
+    BTreeNode(is_leaf=True, keys=[11, 12], num_keys=2, children=[None, None, None, None, None, None], offset=388)
+    BTreeNode(is_leaf=True, keys=[15, 20, 21], num_keys=3, children=[None, None, None, None, None, None], offset=485)
+    BTreeNode(is_leaf=True, keys=[40, 50], num_keys=2, children=[None, None, None, None, None, None], offset=582)
+    BTreeNode(is_leaf=False, keys=[13], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+    BTreeNode(is_leaf=False, keys=[30, 60], num_keys=2, children=[485, 582, 873, 873, None, None], offset=776)
+    BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
+    Root offset is 679
+"""
