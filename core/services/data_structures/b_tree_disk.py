@@ -38,7 +38,8 @@ class DiskBTree:
         """B 树的节点"""
 
         def __init__(self, is_leaf=True, keys=None, children=None, offset=None, n=0):
-            self.is_leaf = is_leaf
+            """初始化 B 树节点类"""
+            self.is_leaf = is_leaf  # 是否为叶子节点
             self.keys = [0] * MAX_KEYS if keys is None else keys  # key e.g. uid
             self.children = [None] * CHILDREN_SIZE if children is None else children  # 下一节点的偏移量
             self.offset = offset  # 当前节点的文件偏移位置
@@ -66,9 +67,7 @@ class DiskBTree:
             return f"BTreeNode(is_leaf={self.is_leaf}, keys={self.keys[:self.n]}, num_keys={self.n}, children={self.children}, offset={self.offset})"
 
         def split_child(self, i, y):
-            # A utility function to split the child y of this node
-            # i is the index of y in the child array C[]
-
+            """分裂子节点"""
             z = create_node(is_leaf=y.is_leaf)
 
             z.n = T - 1
@@ -98,8 +97,7 @@ class DiskBTree:
             DiskBTree.write_node(self)
 
         def insert_non_full(self, k):
-            # A utility function to insert a new key in this node
-            # The assumption is that the node must be non-full when this function is called
+            """非满节点的插入"""
             i = self.n - 1
 
             if self.is_leaf:
@@ -121,15 +119,20 @@ class DiskBTree:
                     if self.keys[i] < k:
                         i += 1
 
+                node = DiskBTree.read_node(self.children[i])
                 node.insert_non_full(k)
-                DiskBTree.write_node(node)
-            DiskBTree.write_node(self)
 
+                DiskBTree.write_node(node)
+                DiskBTree.write_node(self)
+
+    # ----------------------- B 树定义 -----------------------
     def __init__(self, root_offset=None):
+        """初始化 B 树"""
+        # 设置根节点
         if root_offset is None:
             self.root = None
         else:
-            self.root = DiskBTree.read_node(root_offset)
+            self.root = DiskBTree.read_node(root_offset)  # 从磁盘读入根节点
 
     def insert(self, k):
         if self.root is None:
@@ -196,9 +199,13 @@ class DiskBTree:
             return node
 
     @classmethod
-    def write_node(cls, node):
+    def write_node(cls, node, available=None):
         with open(FILENAME, 'r+b' if os.path.exists(FILENAME) else 'w+b') as f:
-            # 若该节点还没有偏移量，分配新偏移量（文件末尾）
+            # 先使用空余位置
+            if available:
+                node.offset = available
+
+            # 若该节点还没有偏移量, 分配新偏移量（文件末尾）
             if node.offset is None:
                 f.seek(0, os.SEEK_END)
                 node.offset = f.tell()
@@ -209,6 +216,19 @@ class DiskBTree:
 
     def close(self):
         return self.root.offset
+
+
+def traverse(filename):
+    with open(FILENAME, 'rb') as f:
+        offset = 0
+        while True:
+            f.seek(offset)
+            data = f.read(NODE_SIZE)
+            if len(data) == 0:
+                break
+            node = from_bytes(data, offset)
+            print(node)
+            offset += NODE_SIZE
 
 
 if __name__ == '__main__':
@@ -234,25 +254,31 @@ if __name__ == '__main__':
     print("The root: ", tree.root)
     print("Search 100: ", tree.search(100))
     print("Search 1: ", tree.search(1))
-    print("Search 11: ", tree.search(11))
+    print("Search 90: ", tree.search(90))
+    print("Search 30: ", tree.search(30))
     root_offset = tree.close()
     print(f"Root offset is {root_offset}")
 
     """
+    One node size 97
     ====================================================================================================
     Initial and Add Data
     ----------------------------------------------------------------------------------------------------
     Add: [2, 3, 4, 5, 6, 12, 7, 8, 9, 10, 11, 15, 13]
     Root offset is 97
-    
-    
     ====================================================================================================
     Load Data and Search
     ----------------------------------------------------------------------------------------------------
     Add new one: [1, 20, 30, 40, 50, 60, 70, 80, 90, 100, 21]
-    The root:  BTreeNode(is_leaf=False, keys=[11], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
-    Search 100:  BTreeNode(is_leaf=True, keys=[70, 80, 100], num_keys=3, children=[None, None, None, None, None, None], offset=582)
+    The root:  BTreeNode(is_leaf=False, keys=[10], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+    Search 100:  BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
     Search 1:  BTreeNode(is_leaf=True, keys=[1, 2, 3], num_keys=3, children=[None, None, None, None, None, None], offset=0)
-    Search 11:  BTreeNode(is_leaf=False, keys=[11], num_keys=1, children=[97, 776, None, None, None, None], offset=679)
+    Search 90:  BTreeNode(is_leaf=True, keys=[70, 80, 90, 100], num_keys=4, children=[None, None, None, None, None, None], offset=873)
+    Search 30:  BTreeNode(is_leaf=False, keys=[13, 30, 60], num_keys=3, children=[388, 485, 582, 873, None, None], offset=776)
     Root offset is 679
     """
+    # tree = DiskBTree(679)
+    # print(tree.search(90))
+    # print("=" * 100)
+    #
+    # traverse(FILENAME)
