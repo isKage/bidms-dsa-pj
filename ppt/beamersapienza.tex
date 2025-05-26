@@ -1,0 +1,447 @@
+\documentclass{beamer}
+\usepackage{amsfonts,amsmath,oldgerm}
+\usetheme{sintef}
+\usepackage{xeCJK}
+\usepackage{ctex}
+\usepackage{hyperref}
+
+\newcommand{\testcolor}[1]{\colorbox{#1}{\textcolor{#1}{test}}~\texttt{#1}}
+
+\usefonttheme[onlymath]{serif}
+
+\titlebackground*{assets/background}
+
+\newcommand{\hrefcol}[2]{\textcolor{cyan}{\href{#1}{#2}}}
+
+\title{商业决策平台的智能数据管理系统}
+\subtitle{数据结构与算法个人大作业}
+% \course{Master's Degree in Computer Science}
+\author{isKage}
+% \IDnumber{1234567}
+\date{2025年5月28日}
+
+\begin{document}
+\maketitle
+
+\begin{frame}
+
+% This template is a based on \hrefcol{https://github.com/TOB-KNPOB/Beamer-LaTeX-Themes}{Beamer-LaTeX-Themes} and its modified by ARCW
+本项目基于 \texttt{Python} 开发，为更好的展示效果，采用 \texttt{Django} 网页框架，开发了一款“数据驱动商业决策平台”。
+各个基础数据结构和算法均从零实现，本项目目标是尽可能的优化时间复杂度，并设计数据存储方式以适配更广泛的开发情景。
+
+\vspace{\baselineskip}
+
+项目存储在 Github ，链接 \hrefcol{https://github.com/isKage/bidms-dsa-pj}{https://github.com/isKage/bidms-dsa-pj} 。
+
+% This template is released under \hrefcol{https://creativecommons.org/licenses/by-nc/4.0/legalcode}{Creative Commons CC BY 4.0} license
+
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{项目背景}
+
+你是一家新兴的“数据驱动商业决策平台”的员工，公司要求你帮助设计其底层数据处理模块。你需要设计一个系统支撑平台的智能化运行，该系统存储的数据包括：
+
+\begin{itemize}
+\item 营销任务：每一条任务存储任务名称、紧急度、影响力；
+\item 一个表示客户之间关系的加权有向图：图中的每个点表示一个客户并存储客户名称；
+\item 所有商品的数据：每一条数据存储商品名称、价格、热度。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{文件结构}
+\begin{itemize}
+\item 本项目基于 \texttt{Python} 开发，为更好的展示效果，采用 \texttt{Django} 网页框架，开发了一款“数据驱动商业决策平台”网页雏形
+\item 其中核心功能实现的代码见 \texttt{core/} 库
+\item 核心功能具体实现 \texttt{services/}
+\item 本项目实现的各类数据结构 \texttt{data\_structures/}
+\end{itemize}
+\end{frame}
+
+% \begin{equation*}
+% \mathrm{i}\,\hslash\frac{\partial}{\partial t} \Psi(\mathbf{r},t) =
+% -\frac{\hslash^2}{2\,m}\nabla^2\Psi(\mathbf{r},t)
+% + V(\mathbf{r})\Psi(\mathbf{r},t)
+% \end{equation*}
+
+\section{Task}
+
+\begin{frame}{任务管理}
+简单来说，对于一个任务，我们需要维护至少 3 个字段 \texttt{name, urgency, impact} ，并实现高效的增删改查功能，以及查看优先级最高的前 \texttt{k} 个任务。其中，一个任务的优先级定义为其紧急度和影响力的乘积。
+\begin{itemize}
+\item 本项目提出对每一个任务，都多维护一个字段 \texttt{uid} 表示该任务的唯一标识符。且 \texttt{uid} 满足主键的特征，即不可重复，且具有自增属性。
+\item 本地存储：于是，我们可以用一个简单的表格存储任务列表：\texttt{uid, name, urgency, impact}
+\item 内存存储：对于这样的一个任务列表，我们采用\textbf{优先级队列}的方式读入这些数据。为了能在 $O(1)$ 内查看某节点，故该优先级队列增加了定位器。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{功能实现}
+我们定义一个类 \texttt{TaskService} 用来维护整个任务列表，并实现功能：
+\begin{itemize}
+\item 增：使用优先级队列的插入；
+\item 删：使用 \texttt{uid} 快速定位后删除；
+\item 改：改 name 则只需修改值；修改键，则采用先删后加的方式；
+\item 查：使用 \texttt{uid} 快速查找。
+\item \texttt{top k} ：方法一是不断的从堆顶出堆；方法二是建立一个 \texttt{k-heap} ，然后和剩下元素进行比较，不断进行出堆入堆操作。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{算法分析}
+首先声明，动态数组的摊销不再特地说明。因为是基于堆实现的优先级队列，所以对于 $n$ 个任务的情况，增（插入）和删除的时间复杂度为 $O(\log n)$ 。
+而改值，使用 \texttt{uid} 进行 $O(1)$ 的查找，对于改键，则需要 $O(2\log n) = O(\log n)$ 。查找在基于 \texttt{uid} 映射的方法只需 $O(1)$ 。
+
+top-k ：
+\begin{itemize}
+\item 方法一，每一次堆顶元素（最小），复杂度为 $O(\log n)$ ，总共出堆 $k$ 次，故复杂度为 $O(k\log n)$ 。
+\item - 方法二，先将 $k$ 个元素建堆 ，复杂度为 $O(k)$ 。然后将剩下的 $n-k$ 个元素逐个和堆顶元素比较，如果更大，则替换掉栈顶元素，同时进行向下冒泡 downheap 使得满足 heap-order 性质，这一步的复杂度为 $O((n-k)\cdot \log k)$ 。最后再逐个出堆，总共的时间复杂度为 $O(k + (n-k)\cdot \log k + k\log k) \sim O(n\cdot \log k)$ 。若不采用自底向上建堆，则为 $O(k\log k + (n-k)\log k + k \log k) \sim O(n\log k)$ 。
+\end{itemize}
+
+所以实现时，可以选取一个临界点，实现复杂度为 $\min \{ O(k\log n),\ O(n\log k) \}$ 。
+\end{frame}
+
+
+\section{Task Plus}
+
+\begin{frame}{任务管理拓展}
+\begin{itemize}
+\item 简单来说，无需修改原数据存储方式，只需增加一个图数据存储任务直接的联系即可。
+我们采用有向图，每个节点存储任务的 uid ，用 A 指向 B 表示 B 是 A 的前置。
+那么这个图的要求就是，不能存在有向循环/有向环，即图为 DAG （有向非循环图）。
+\item 图采用邻接映射实现，所以可以采用 json 格式文件存储图结构，而每个图的节点只存储 uid ，其他数据再之前的优先级队列中已经存储完成。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{功能实现}
+\begin{itemize}
+\item 首先，继承之前实现的 TaskService 类，并在初始化时先调用父类初始化方法。
+\item 此时的增删改查功能，在基于父类已经实现的基础上，添加图的操作。
+\item 对于有向无环图的限制判断，我们采用\textbf{拓扑排序算法}
+\item 添加边 uv ，当拓扑排序包含了所有点时，说明不含有向循环，否则不允许增加边 uv 。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{算法分析}
+\begin{itemize}
+\item 插入/删除边对于图来说均为 $O(1)$ ，对于点的插入为 $O(1)$ ，而点的删除需要删除所有邻边，故为 $O(\deg v)$ 。点的查找，使用定位器只需 $O(1)$ ，而这里边的查找是基于点，故仍然为 $O(1)$ 。
+\item 而拓扑排序的时间复杂度为 $O(n+m)$ 其中 $n$ 为点的个数（即任务数），$m$ 为边的个数（即任务关系数）。注意到，有无环是整个图的性质，一般而言最坏的情况下均要遍历整幅图。
+\item 除了拓扑排序，也可以使用遍历（BFS or DFS），例如对于点 u 和 v ，我们想判断 u -> v 相连后会不会出现环。可以检查此时是否有一条从 v 到 u 的路径，即从 u 开始向上遍历，如果上游存在 v 则相连会成环。注意到，遍历的复杂度也是 $O(n+m)$ 。
+\end{itemize}
+\end{frame}
+
+
+\section{Client}
+
+
+\begin{frame}{客户管理}
+\begin{itemize}
+\item 简单来说， 需要维护客户 `name` 字段和客户之间关系影响 `weight` 字段。同样，我们采用 uid 代表每一个客户，允许客户重名。使用有向图代表关系，A 指向 B 代表 A 对 B 有影响，不妨设客户之间只能单向影响，即不允许两点之间有 2 条边，即简单图（但允许成环）。
+\item 与 Task Plus 的存储方式相同，json 文件存储图结构，图的每个点存储 uid 图的边存储影响力。未存储客户的详细信息，使用 csv 文件存储 uid 和客户其他信息。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{功能实现}
+\begin{itemize}
+\item 相比于之前的 task ，客户管理功能只需完成存储信息和关系即可，没有比较和优先级的需求，直接使用图即可完成。
+\item 注意，uid 到客户信息的映射，也可以采用存储 uid: offset 其中 offset 为客户 uid 数据在磁盘中的偏移量，这样就可以实现超大量数据的快速搜索，而无需读入内存。这一想法的实现，可见后面实现 product 的磁盘管理。
+\item 而要查找被客户影响的其他所有客户，可以采用广度优先搜索 BFS 遍历全图，并计算沿路径的权重和作为其影响力。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{算法分析}
+\begin{itemize}
+\item 点和边的增删改查与 Task Plus 一致，这里不赘述。对于广度优先搜索，复杂度为 $O(n+m)$ ，其中 $n$ 为客户数, $m$ 为关系数。
+\item 【Tip】之前的 Task 关系和这里的 Client 关系图均采用邻接表/映射实现，并存储在 json 文件中。如此加载数据，重新构建图十分方便，但也浪费了许多空间。可以考虑存储有向边集合到文件中，每次加载读取时，从边集加载重构图结构。这样并不会消耗过多时间，只要在项目开始运行时就先加载数据，项目结束时才存储数据到文件，如此重构图的过程只进行了一次。
+\end{itemize}
+\end{frame}
+
+
+\section{Client Plus}
+
+
+\begin{frame}{客户管理拓展}
+\begin{itemize}
+\item 拓展：当图中两个客户间的路径过长或路径影响力过小时，这两个客户间的影响可以忽略不计。在此基础上，完善这一部分功能。
+\item 总影响力有多种定义：所能到达的所有路径的权重和；所有最大路路长的平均
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{功能实现}
+下面我们实现第二种定义——所有最大路路长的平均。
+\begin{itemize}
+\item 修改 Dijkstra 算法，使得当此时的权重和超过某个阈值，则停止向下探索。即实现了“路径过长或路径影响力过小时，这两个客户间的影响可以忽略不计”
+\item 我们也可以基于统计推断的思想，先利用 Floyd Warshall 算法计算各点之间的最短/大路，然后进行统计分析
+\end{itemize}
+
+统计分析：
+
+设 $X_{ij}$ 代表客户 $i$ 对客户 $j$ 的最大影响力大小。假设 $X_{ij} \sim N(\mu_i,\ \sigma_i^2)$ ，且 $X_{ij}$ 相互独立对于 $\forall\ j = 1,\ 2,\ \cdots,\ n$ 。则有：
+
+\begin{equation*}
+\hat{\mu}_{i,\ unb} = \frac{1}{n}\sum_{j=1}^n X_{ij} = \bar{X_i}
+\end{equation*}
+
+\begin{equation*}
+\hat{\sigma^2}_{i,\ unb} = \frac{1}{n-1}\sum_{j=1}^n (X_{ij} - \bar{X_i})^2 = S^2
+\end{equation*}
+\end{frame}
+
+
+\begin{frame}{功能实现}
+\begin{equation*}
+\frac{X_{ij} - \mu_i}{\sigma_i} \sim N(0,\ 1)
+\end{equation*}
+
+\begin{equation*}
+P\left( z_{\alpha/2} < \frac{X_{ij} - \mu_i}{\sigma_i} < z_{1-\alpha/2} \right) = 1 - \alpha
+\end{equation*}
+
+我们定义 $X_{ij} \leq \mu_i + z_{\alpha/2}\cdot \sigma_i$ 为异常小的，可以忽略不计。于是根据已有的数据 $X_{ij}\quad \forall j = 1,\ 2,\ \cdots,\ n$ 可以得到被忽略的数据 $X^{ign}_{ij}$（基于对 $\mu_i$ 和 $\sigma$ 的估计）：
+
+\begin{equation*}
+X^{ign}_{ij} \leq \left(\frac{1}{n}\sum_{j=1}^n X_{ij}\right) + z_{\alpha/2}\cdot  \left( \frac{1}{n-1}\sum_{j=1}^n (X_{ij} - \bar{X_i})^2\right)
+\end{equation*}
+\end{frame}
+
+\begin{frame}{算法分析}
+\begin{itemize}
+\item 方法一：Dijkstra 算法使用优先级队列堆实现的复杂度为 $O(n+m)\log n$ 而我们需要对 $n$ 个客户使用，故复杂度为 $O(n(n+m)\log n)$ 。
+\item 方法二：Floyd Warshall 算法复杂度为 $O(n^3)$ 。
+\item 当图稀疏时，$O(n(n+m)\log n) = O(n^2 \log n)$ 肯定是优于 $O(n^3)$ 。但当图稠密时， $O(n(n+m)\log n) = O(n \cdot n^2 \log n) = O(n^3\log n)$ 是劣于 $O(n^3)$ 。
+\end{itemize}
+\end{frame}
+
+
+\section{Product}
+
+
+\begin{frame}{商品管理}
+\begin{itemize}
+\item 简单来说，我们需要维护一个商品的 `name, price, popularity` 字段，同样我们维护一个 `uid` 作为唯一标识符，实现增删改查，并返回任意 price 区间的数据，按照 popularity 排序。同时实现字符串匹配问题。
+\item 类似 Task 基础功能，使用一个 csv 文件存储每个商品信息：uid,name,price,popularity
+\item 内存数据：读入数据，存储在一个有序映射 AVL 树（二叉搜索树），这里的 AVL 树的键存一个特殊的对象 `ProductKey` ，而节点值为一个哈希表，作为一个桶，存储多个 `Product` 对象。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{功能实现}
+\begin{itemize}
+\item 考虑一种情况：我们需要按照 price 范围返回对象，所以 AVL 树的键应该是 price 相关的数据。但二叉搜索树如何处理键相同的问题？我们使用的 `AVLTreeMap` 类是一个有序映射，映射则不允许键相同。所以一个解决方法就是用桶 Bucket 的思想。
+\item 每个搜索树节点上存储的不是一个 `Product` 类，而是一个哈希表，哈希表中存储着多个商品，形如 uid: Product 。所以我们建立的 `Product` 类处理维护 `uid,name,price,popularity` 还需要维护一个 `self.bucket` 用来表示当前商品属于哪个桶。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{功能实现}
+\begin{itemize}
+\item 除此之外，直接将 \texttt{price} 作为键也是一个不好的选择。其一，\texttt{price} 为浮点数，浮点数的 \texttt{==} 运算精度有限，简单来说就是 \texttt{float} 类型\textbf{全序性质}不佳。其二，注意到除了 \texttt{price} ，热度 \texttt{popularity} 也是排序的标准之一，简单来说，这是一个\textbf{字典序排序}。其三，目前只有 2 个属性可用来排序，未来面对更复杂的情况，则无法使用，代码可拓展性差。
+\item 所以，我们可以定义一个\textbf{键类}例如本例的 \texttt{Product.ProductKey} 类，使其满足全序性质（定义 \texttt{\_\_eq\_\_}, \texttt{\_\_lt\_\_}），同时定义哈希函数（\texttt{\_\_hash\_\_}），使其具有充当键的完备性和可拓展性。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{功能实现}
+\begin{itemize}
+\item 插入：获取 uid 并实例化一个 `Product` 对象，查看是否 AVL 树的键中是否已经有 `ProductKey` 。没有则新建桶，并插入；有则直接插入。
+\item 删除：根据 uid 和 `self.uid\_map` 快速找到 Product 类，并获取 bucket ，从桶中删去，检查桶是否为空，空则从 AVL 树中删去键为此的节点。
+\item 更新：若只更新与键无关的值，只需找到 Product 类修改即可，对 AVL 不操作；否则先删除后插入。
+\item 查看：根据 uid 查看。
+\item price 范围：找到 `start` 位置，然后中序遍历，逐个返回即可，直到 `end`。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{模式匹配}
+Knuth-Morris-Pratt 算法：
+\begin{itemize}
+\item 方法一：逐个比较商品 name 和 pattern 。
+\item 方法二：对于目标搜索 pattern ，先将所有商品的 name 使用特殊字符（例如 "*"）拼接成一个长字符串，然后进行匹配 pattern ，返回所有匹配成功的位置。
+\item 【思考】当 name 列表过大，是否会浪费过多空间。是否可以考虑使用霍夫曼编码，压缩 text 文本和 pattern 字符串，对二进制数按位计算，一次节省空间。例如，ASCII 码一个字符占据 1 个字节，但在霍夫曼编码的情况下能压缩。可以尝试构造一个长数组，分配空间为 `len * 1 byte` （C 语言中最小寻址为 1 字节），那么 1 字节可以存储不止 1 个字符。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{算法分析}
+\begin{itemize}
+\item 设商品数为 $n$ ，则 AVL 树高度大约为 $h = O(\log n)$ 。搜索的复杂度为 $O(\log n)$ 。插入和删除也为 $O(\log n)$ 。更新操作最坏也是插入和删除的组合，仍然为对数时间。查找范围为 $O(s + \log n)$ 其中 $s$ 为查找范围中含有的商品数。
+\item 模式匹配：设商品名大约均为 $m$ 长，匹配的字符串长为 $p \leq m$ ，总共 $n$ 个商品。如果采用方法一，长为 m 的匹配复杂度为 $O(m + p)$，循环 n 次，最终复杂度为 $O(n(m + p))$ ，方法二先遍历 $O(n)$ ，然后拼接字符串，复杂度为 $O(n)$ ，然后对整体匹配，复杂度为 $O(nm + p)$ ，最后索引会原来的 uid $O(s)$ ，其中 $s \sim n$ 为匹配到的位置最终复杂度为 $O(n +nm + p)$ 。二者的差：
+\end{itemize}
+\begin{equation*}
+n(m+p) - (n + n + nm + p + s) = np-2n-p-s = (n-1)(p-1) - n - s - 1 \geq 0
+\end{equation*}
+
+一般当 $p \geq 4$ 时，方法二更优，因为 s 一般与 n 同一量级。不过两种方法并无太大差距，而且方法二明显浪费空间。
+
+\end{frame}
+
+
+\section{Product Plus}
+
+
+\begin{frame}{商品管理拓展}
+\begin{itemize}
+\item 实际上，由于该平台上的商品数目过多，所有的商品数据存储在磁盘上，且无法被全部读取到内存后进行处理。
+\item 计算机系统提供多种数据存储方式：基于芯片的主存（内存） \& 基于磁盘的辅存。主存存储正在运行的程序和数据，断电后数据丢失，存储数据比辅存少，但计算速度极快。辅存基于磁盘，读取依靠机械运动，可存储数据巨大，但读写速度非常慢（比内存慢 10 万倍）。（为提高效率，磁盘一般按块 block 读入，而内存会实现分页 page 操作，实现与磁盘块的对齐，当内存访问不到某个对象，触发缺页异常，会将磁盘读取的块数据按照页读入内存）。
+\item 所以在考虑这个问题时，我们需要将磁盘读取的时间考虑在内。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{B 树与 B+ 树}
+\textbf{B 树} 是一种满足以下条件的树结构：
+\begin{itemize}
+  \item \textbf{多路分支}：每个节点最多有 $t$ 个子节点（$t$ 阶）。
+  \item \textbf{平衡性}：所有叶子节点位于同一层。
+  \item \textbf{子节点限制}：
+  \begin{itemize}
+    \item 根节点至少有 2 个子节点（除非它是叶子）。
+    \item 内部节点至少有 $\left\lceil t/2 \right\rceil$ 个子节点。
+    \item 每个节点最多有 $t$ 个子节点。
+  \end{itemize}
+  \item \textbf{键限制}：
+  \begin{itemize}
+    \item 每个节点最多存储 $t - 1$ 个键。
+    \item 非根节点至少有 $\left\lceil t/2 \right\rceil - 1$ 个键。
+  \end{itemize}
+  \item \textbf{键值分布}：每个节点中键值有序排列，键 $k_1$ 与 $k_2$ 之间的子树满足 $k_1 \leq k \leq k_2$。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{B+ 树特点}
+\textbf{B+ 树} 是 B 树的变种，具备以下特点：
+\begin{itemize}
+  \item \textbf{内部节点}：不存储实际数据，仅作为索引使用。
+  \item \textbf{叶子节点}：才存储完整的数据记录。
+  \item \textbf{链式连接}：所有叶子节点通过指针串联，便于范围查询。
+\end{itemize}
+
+本项目的 b\_plus\_tree.py 文件，实现了 B+ 树 BPlusTree 类以及结合具体 Product 商品数据的管理（增删改查+范围搜索），
+采用的是一次性将所有节点索引读入内存，叶子节点存储了具体数据的磁盘索引，并借用 shelve 高级库进行磁盘管理，下面介绍从零实现的 B 树以更好的理解。
+\end{frame}
+
+\begin{frame}{数据读取与磁盘管理}
+\begin{itemize}
+  \item 以 B 树为例，结合本项目的商品数据，介绍如何处理超大量数据。
+  \item 数据存储在二进制文件 \texttt{btree.db} 中，保存的是 B 树的节点对象。
+  \item 每个节点包含以下信息：
+  \begin{itemize}
+    \item \texttt{is\_leaf}：是否为叶子节点；
+    \item \texttt{key}：键值，如商品价格 \texttt{price}；
+    \item \texttt{children}：子节点在磁盘中的偏移量（offset）；
+    \item \texttt{offset}：当前节点自身的磁盘位置（通常只存根节点）；
+    \item \texttt{n}：当前节点包含的键数量。
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{节点磁盘存储结构}
+\begin{itemize}
+  \item 每个节点在磁盘上分配固定长度的 bit 空间，包含如下字段：
+  \begin{itemize}
+    \item \texttt{is\_leaf}：1 bit，标记是否为叶子节点；
+    \item \texttt{keys}：每个键分配 \texttt{KEY\_SIZE = 8} 字节（64 bit），共预留 \texttt{MAX\_KEYS = 2T - 1} 个键；
+    \item \texttt{children}：每个指针占用 \texttt{OFFSET\_SIZE = 8} 字节，总计 \texttt{CHILDREN\_SIZE = MAX\_KEYS + 1 = 2T} 个位置；
+    \item \texttt{n}：记录当前键的数量，占用 8 字节；
+    \item \texttt{offset}：记录当前节点在磁盘中的位置，也预留 8 字节。
+  \end{itemize}
+  \item \textbf{说明}：\texttt{offset} 表示该节点位于磁盘的第 \texttt{offset // page} 页的第 \texttt{offset \% page} 个字节位置。可以类比为磁头旋转定位的位置偏移。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{B 树的搜索操作}
+\begin{itemize}
+  \item 搜索键值 $k$ 的过程：
+  \begin{enumerate}
+    \item 读取根节点：根据 \texttt{root\_offset} 从磁盘中加载根节点。
+    \item 当前节点查找：在节点的 \texttt{keys} 中搜索 $k$，若找到直接返回。
+    \item 若未命中，根据 $key_i < k < key_j$ 选择子节点 $children_i$ 对应的 offset。
+    \item 从磁盘加载该 offset 节点并重复步骤 2。
+    \item 若最终在叶节点未找到，返回 \texttt{None}。
+  \end{enumerate}
+  \item 插入/删除涉及结构变更，具体见源码：\texttt{b\_tree\_disk.py}
+  \item \textbf{说明}：更多内容可以参考教材 \href{https://book.douban.com/subject/1152912/}{《算法导论》} 第五部分-高级数据结构-第 18 章-B树。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{B 树 vs B+ 树：数据存储策略}
+\begin{itemize}
+  \item B 树优点：
+  \begin{itemize}
+    \item 搜索路径上的节点按需加载；
+    \item 节省内存，适合大数据环境。
+  \end{itemize}
+  \item B 树 \texttt{keys} 实际应存储完整数据（如 \texttt{Product} 对象），比较时应使用其 \texttt{ProductKey}。
+  \item B+ 树差异：
+  \begin{itemize}
+    \item 内部节点仅存键值索引，不含具体数据；
+    \item 叶子节点与 B 树类似，但多一个指向下一个叶子的 offset 指针；
+    \item 更适合范围查询与顺序遍历。
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{B 树算法复杂度分析}
+设 B 树包含 $n$ 个键，每个节点至多 $t$ 个子节点，高度 $h$ 满足：
+\[
+h \leq \log_t \frac{n+1}{2}
+\]
+结论如下（证明参见《算法导论》）：
+\begin{itemize}
+  \item \textbf{搜索}：
+  \begin{itemize}
+    \item 磁盘访问：$O(h) = O(\log_t n)$，即每层读一次；
+    \item CPU 内存访问：每个节点含最多 $t - 1$ 个键，故为 $O(t \log_t n)$。
+  \end{itemize}
+  \item \textbf{插入}：
+  \begin{itemize}
+    \item 与搜索相同；
+    \item 若节点满则分裂，操作为 $O(1)$。
+  \end{itemize}
+  \item \textbf{删除}：
+  \begin{itemize}
+    \item 与插入相同；
+    \item 若涉及合并/向下合并，复杂度仍为 $O(1)$。
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\section{Conclusion}
+
+\begin{frame}{项目总结}
+本项目从零实现了基础数据结构，例如优先级队列、树、图、哈希表，以及一些基础算法，例如排序算法、图的各类算法、模式匹配等，并在此基础上拓展了 B 树和 B+ 树的知识，同时实现了基于磁盘管理的 B 树。
+\end{frame}
+
+\begin{frame}{优点}
+\begin{itemize}
+  \item \textbf{设计数据存储方式}：每一个对象，使用自增唯一的主键 \texttt{uid} 进行唯一标识，为未来复杂数据的开发提供了便利。
+  \item \textbf{提出了基于比较的自定义“键”对象}：在基于比较的排序算法中，针对“键”的全序要求，本项目提出了自定义“键“类，从而可以自定义”比较“的方式，为未来处理复杂比较问题提供了便利。
+  \item \textbf{处理了”键“相同的冲突}：许多场景允许键相同（例如价格作为键排序时），本项目提出了建立桶 Bucket 结构来存储多个相同键的数据。
+  \item \textbf{实现了基于磁盘管理的 B 树}：B+ 树借用了高级包 \texttt{shelve} ，此包以类字典的方式管理文件读写；除此之外，本项目还完成了从零实现的基于磁盘管理的 B 树，数据以二进制文件的方式存储，完成了基本的增删改查和对应的永久性处理。
+  \item \textbf{项目已实现可视化 UI 界面}：本项目基于 `Django` 实现了前端编写，完成了项目雏形设计。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{项目不足与改进方向}
+\textbf{当前不足：}
+\begin{itemize}
+  \item 为与前端兼容，实现了一些与算法和结构本身无关的方法，封装程度不足。
+  \item 问题二用户影响部分，对影响的定义比较简单。
+  \item B 树磁盘管理部分使用了一些不必要的文件读写，效率有所影响。
+  \item B+ 树实现依赖 \texttt{shelve}，细节控制有限。
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{未来改进方向：}
+\begin{itemize}
+  \item 有关网络重要性可以采用 PageRank 算法，前缀查找可以采用字典树结构。
+  \item 磁盘按“块”方式批量读入，提高 I/O 效率；
+  \item 探索 KPM 算法是否可以与 Huffman 编码联合使用，提高内存利用率（待思考）。
+  \item 使用 uid 映射到具体数据时，也可以采用 B 树磁盘管理的思想，由 uid 映射到该数据对应的偏移量，从而可以应对一条十分巨大的数据记录。
+\end{itemize}
+\end{frame}
+
+\backmatter
+\end{document}
