@@ -751,9 +751,9 @@ class DiskBTreeNode:
         self.n = n  # Current number of keys
 ```
 
-对每一个节点，我们分配固定长度 bit 的磁盘空间用于存储：
+对每一个节点，我们分配固定长度字节的磁盘空间用于存储：
 
-- `is_leaf` 1 bit 。
+- `is_leaf` 1 字节 。
 - `keys` 每一个 key 分 `KEY_SIZE = 8` 字节（64 bit），总共预留 `MAX_KEYS = 2 * T - 1` 个 key （8 字节）的空间。
 - `children` 与 key 类似，每个分 `OFFSET_SIZE = 8` 字节，预留 `CHILDREN_SIZE = MAX_KEYS + 1` 即 T + 1 个 8 字节空间。
 - `n` 预留 8 字节空间。
